@@ -13,7 +13,9 @@
   "scripts": {
     "server": "webpack serve --mode development --env development --open",
     "dev": "webpack --mode development",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "test": "vitest run",
+    "jest": "jest"
   },
   "repository": {
     "type": "git",
@@ -25,10 +27,17 @@
     "@babel/core": "^7.14.5",
     "@babel/plugin-transform-runtime": "^7.14.5",
     "@babel/preset-env": "^7.14.5",
+    "@originjs/vite-plugin-require-context": "^1.0.9",
     "babel-loader": "^8.2.2",
+    "babel-plugin-require-context-hook": "^1.0.0",
+    "babel-plugin-transform-require-context": "^0.1.1",
+    "canvas": "^2.10.2",
+    "canvas-5-polyfill": "^0.1.5",
     "css-loader": "^5.2.6",
+    "jsdom": "^20.0.2",
     "source-map-loader": "^3.0.0",
     "style-loader": "^2.0.0",
+    "vitest": "^0.25.1",
     "webpack": "^5.38.1",
     "webpack-cli": "^4.7.2",
     "webpack-dev-server": "^4.3.1"
@@ -47,5 +56,10 @@
     "semver-compare": "^1.0.0",
     "uuid": "^8.3.2",
     "webfontloader": "^1.6.28"
+  },
+  "jest": {
+    "setupFiles": [
+      "<rootDir>/.jest/register-context.js"
+    ]
   }
 }
