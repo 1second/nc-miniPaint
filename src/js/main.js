@@ -54,5 +54,7 @@ export function init (e) {
 	// Render all
 	GUI.init();
 	Layers.init();
+	window.onPaintInitialized && window.onPaintInitialized();
+	window.ncHook && window.ncHook.onPaintInitialized();
 }
 window.addEventListener('load', init, false);

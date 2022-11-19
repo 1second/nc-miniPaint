@@ -1601,8 +1601,7 @@ class Text_editor_class {
 		if (!this.lineRenderInfo) return;
 
 		try {
-
-			let options = options || {};
+			// let options = options || {};
 			let isSelectionEmpty = this.selection.is_empty();
 
 			ctx.textAlign = 'left';

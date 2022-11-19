@@ -12,6 +12,9 @@ import app from '../app.js';
 
 var instance = null;
 
+const onChange = () => {
+	window.onPaintChange && window.onPaintChange()
+}
 /**
  * Undo state class. Supports multiple levels undo.
  */
@@ -36,6 +39,19 @@ class Base_state_class {
 		this.action_history_max = 50;
 
 		this.set_events();
+	}
+
+	reset() {
+		console.log('reset state');
+		this.action_history.forEach(a => {
+			try {
+				a.free();
+			} catch (error) {
+				console.error(error);
+			}
+		})
+		this.action_history = [];
+		this.action_history_index = 0;
 	}
 
 	set_events() {
@@ -114,6 +130,7 @@ class Base_state_class {
 		if (error_during_free) {
 			alertify.error('A problem occurred while removing undo history. It\'s suggested you save your work and refresh the page in order to free up memory.');
 		}
+		onChange();
 		return { status: 'completed' };
 	}
 
@@ -130,6 +147,7 @@ class Base_state_class {
 			const action = this.action_history[this.action_history_index];
 			await action.do();
 			this.action_history_index++;
+			onChange();
 		} else {
 			alertify.success('There\'s nothing to redo', 3);
 		}
@@ -139,6 +157,7 @@ class Base_state_class {
 		if (this.can_undo()) {
 			this.action_history_index--;
 			await this.action_history[this.action_history_index].undo();
+			onChange();
 		} else {
 			alertify.success('There\'s nothing to undo', 3);
 		}
