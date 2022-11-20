@@ -510,8 +510,12 @@ function initConfig() {
 
 var config = initConfig();
 
+if (window.ncConfigWithVar) {
+  config = window.ncConfigWithVar(config);
+}
+
 if (window.isServerRender) {
-	config = initServerRender(config, initConfig);
+  config = initServerRender(config, initConfig);
 }
 
 export default config;

@@ -1,6 +1,7 @@
-import { createApp } from "vue";
+import { createApp, markRaw } from "vue";
 import { getLocationQuery } from "./util";
 import Status from "./view/Status.vue";
+import { ncConfigWithVar } from "./tplVar";
 let onPaintInitialized = () => 0 as any;
 
 const paintInit = new Promise<void>((r) => (onPaintInitialized = r));
@@ -8,6 +9,8 @@ const paintInit = new Promise<void>((r) => (onPaintInitialized = r));
 // server render 模式下，不注入Nc模板参数编辑器
 (window as any).onPaintInitialized =
   (window as any).onPaintInitialized || onPaintInitialized;
+
+(window as any).ncConfigWithVar = ncConfigWithVar;
 
 function paintApp(): MiniPaintApp {
   const dummy = {} as MiniPaintApp;
@@ -19,7 +22,9 @@ function paintApp(): MiniPaintApp {
     "FileOpen",
     "FileSave",
     "State",
+    "AppConfig",
   ];
+  markRaw(g.AppConfig);
 
   return new Proxy(dummy, {
     get(target, prop: AppProp) {
@@ -27,7 +32,6 @@ function paintApp(): MiniPaintApp {
       return g[prop];
     },
     set(target, p: AppProp, newValue, receiver) {
-      console.log({ target, p, newValue, receiver });
       if (p === "onPaintChange" || p === "onPaintInitialized") {
         g[p] = newValue;
         return true;

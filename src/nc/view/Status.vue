@@ -4,6 +4,8 @@ import { api } from "../api/api";
 import { wrapAsync } from "../util";
 import Loading from "./comps/Loading.vue";
 import { useAutoSave } from "../hook";
+import Modal from "./comps/Modal.vue";
+import VarEditor from "./VarEditor.vue";
 const props = defineProps<{
   filename: string;
   paint: MiniPaintApp;
@@ -14,6 +16,7 @@ const state = reactive({
   loading: false,
   loaded: false,
   autoSave: true,
+  showVarEditor: true,
 });
 
 const autoSave = useAutoSave(
@@ -24,6 +27,7 @@ const autoSave = useAutoSave(
 
 let loadAndOpen = async () => {
   const tpl = await api.getTemplate(props.filename);
+  props.paint.AppConfig._tplVarManager.setTplVars(tpl._tplVars);
   props.paint.FileOpen.load_json(tpl);
   props.paint.State.reset();
   state.loaded = true;
@@ -36,7 +40,6 @@ loadAndOpen = wrapAsync(
 );
 
 loadAndOpen();
-
 </script>
 <template>
   <div>
@@ -60,17 +63,39 @@ loadAndOpen();
       </div>
       <div class="vertical-border" />
       <div class="save-tip">
-        {{
-          autoSave.unsavedOpCnt
-            ? `${autoSave.unsavedOpCnt}个操作未保存`
-            : "所有操作已保存"
-        }}
+        <span v-if="autoSave.saving"> 正在保存 </span>
+        <span v-else>
+          {{
+            autoSave.unsavedOpCnt
+              ? `${autoSave.unsavedOpCnt}个操作未保存`
+              : "所有操作已保存"
+          }}
+        </span>
+        <a
+          href="javascript:;"
+          class="text-btn"
+          v-show="!autoSave.saving && autoSave.unsavedOpCnt"
+          @click="autoSave.save"
+          >保存</a
+        >
+        <span
+          v-show="autoSave.savingError && !autoSave.saving"
+          style="color: red"
+          >保存失败 {{ autoSave.savingError }}</span
+        >
+      </div>
+      <div class="vertical-border" />
+      <div class="ops">
+        <button @click="state.showVarEditor = true">模板变量</button>
       </div>
       <div class="vertical-border" />
       <div class="filename">
         {{ props.filename }}
       </div>
     </div>
+    <Modal v-model:visible="state.showVarEditor" title="编辑模板变量">
+      <VarEditor :paint="props.paint" />
+    </Modal>
   </div>
 </template>
 <style scoped>
@@ -105,5 +130,10 @@ label {
   height: 100vh;
   background: rgba(255, 255, 255, 0.8);
   z-index: 100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
 }
 </style>

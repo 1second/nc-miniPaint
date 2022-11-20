@@ -42,7 +42,7 @@ class Base_state_class {
 	}
 
 	reset() {
-		console.log('reset state');
+		// console.log('reset state');
 		this.action_history.forEach(a => {
 			try {
 				a.free();

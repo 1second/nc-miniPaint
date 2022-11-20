@@ -18,10 +18,9 @@ export function useAutoSave(
   let doSave = async () => {
     lastSavedAt.value = Date.now();
     const thisEditSequence = editSequence.value;
-    await api.saveTemplate(
-      filename,
-      JSON.parse(paint.FileSave.export_as_json())
-    );
+    const json = JSON.parse(paint.FileSave.export_as_json());
+    json._tplVars = paint.AppConfig._tplVarManager.tplVars;
+    await api.saveTemplate(filename, json);
     lastSavedSequence.value = thisEditSequence;
   };
 
@@ -52,7 +51,7 @@ export function useAutoSave(
   };
 
   watchEffect(() => enabled.value && onChange());
-//   watchEffect(() => console.log({ editSequence: editSequence.value }));
+  //   watchEffect(() => console.log({ editSequence: editSequence.value }));
 
   return reactive({
     unsavedOpCnt,
