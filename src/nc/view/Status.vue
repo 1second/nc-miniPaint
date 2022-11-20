@@ -1,0 +1,109 @@
+<script lang="ts" setup>
+import { reactive, toRefs, computed } from "vue";
+import { api } from "../api/api";
+import { wrapAsync } from "../util";
+import Loading from "./comps/Loading.vue";
+import { useAutoSave } from "../hook";
+const props = defineProps<{
+  filename: string;
+  paint: MiniPaintApp;
+}>();
+
+const state = reactive({
+  loadingError: null as string | null,
+  loading: false,
+  loaded: false,
+  autoSave: true,
+});
+
+const autoSave = useAutoSave(
+  props.filename,
+  props.paint,
+  computed(() => state.autoSave && state.loaded)
+);
+
+let loadAndOpen = async () => {
+  const tpl = await api.getTemplate(props.filename);
+  props.paint.FileOpen.load_json(tpl);
+  props.paint.State.reset();
+  state.loaded = true;
+};
+
+loadAndOpen = wrapAsync(
+  loadAndOpen,
+  toRefs(state).loading,
+  toRefs(state).loadingError
+);
+
+loadAndOpen();
+
+</script>
+<template>
+  <div>
+    <div class="loading-mask" v-if="!state.loaded">
+      <Loading v-show="state.loading" />
+      <div v-show="!state.loading && state.loadingError">
+        <p style="color: red">加载模板错误： {{ state.loadingError }}</p>
+        <a href="javascript:;" @click="loadAndOpen">重试</a>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="auto-save">
+        <input
+          id="auto-save-checkbox"
+          type="checkbox"
+          v-model="state.autoSave"
+          :disabled="!state.loaded"
+        />
+        <label for="auto-save-checkbox">自动保存</label>
+      </div>
+      <div class="vertical-border" />
+      <div class="save-tip">
+        {{
+          autoSave.unsavedOpCnt
+            ? `${autoSave.unsavedOpCnt}个操作未保存`
+            : "所有操作已保存"
+        }}
+      </div>
+      <div class="vertical-border" />
+      <div class="filename">
+        {{ props.filename }}
+      </div>
+    </div>
+  </div>
+</template>
+<style scoped>
+* {
+  box-sizing: border-box;
+}
+.status-bar {
+  display: flex;
+}
+
+.vertical-border::after {
+  content: ".";
+  color: transparent;
+  display: block;
+  width: 1px;
+  height: 100%;
+  margin: 0 10px;
+  background-color: #ccc;
+}
+input[type="checkbox"] {
+  margin: 0 5px;
+}
+label {
+  margin: 0;
+  user-select: none;
+}
+.loading-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 100;
+}
+</style>

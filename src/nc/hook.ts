@@ -1,61 +1,63 @@
+import { ref, reactive, readonly, computed, watchEffect } from "vue";
 import { api } from "./api/api";
-import { getLocationQuery } from "./util";
-let onPaintInitialized = () => 0 as any;
+import { wrapAsync } from "./util";
 
-const paintInit = new Promise<void>((r) => (onPaintInitialized = r));
+export function useAutoSave(
+  filename: string,
+  paint: MiniPaintApp,
+  enabled: Trackable<boolean>
+) {
+  const saving = ref(false);
+  const savingError = ref(null as string | null);
+  const editSequence = ref(0);
+  const lastSavedSequence = ref(0);
+  const unsavedOpCnt = computed(() =>
+    Math.abs(editSequence.value - lastSavedSequence.value)
+  );
+  const lastSavedAt = ref(0);
+  let doSave = async () => {
+    lastSavedAt.value = Date.now();
+    const thisEditSequence = editSequence.value;
+    await api.saveTemplate(
+      filename,
+      JSON.parse(paint.FileSave.export_as_json())
+    );
+    lastSavedSequence.value = thisEditSequence;
+  };
 
-(window as any).onPaintInitialized =
-  (window as any).onPaintInitialized || onPaintInitialized;
+  doSave = wrapAsync(doSave, saving, savingError);
 
-let filename = "";
-// show filename
-paintInit.then(() => {
-  filename = getLocationQuery().filename;
-  const filenameContainer = document.createElement("div");
-  filenameContainer.id = "filename-container";
-  filenameContainer.innerText = filename;
-  document.querySelector("#main_menu")?.appendChild(filenameContainer);
-});
+  let saveTimer = 0;
+  const onChange = () => {
+    const now = Date.now();
 
-// load file
-const getTemplatePromise = paintInit.then(() => api.getTemplate(filename));
+    if (!enabled.value || unsavedOpCnt.value === 0) return;
 
-declare var Layers: any;
-declare var FileOpen: any;
-declare var FileSave: any;
-declare var State: any;
-
-// open file
-const openPromise = getTemplatePromise.then((tpl) =>
-  FileOpen.load_json(tpl, false)
-);
-
-openPromise.catch((e) => {
-  alert("Failed to load template: " + e.toString());
-  console.error(e);
-});
-
-function onPaintChange() {
-  console.log('change');
-}
-
-openPromise.then(() => {
-  (window as any).onPaintChange = onPaintChange;
-})
-
-// save file periodically
-openPromise.then(() => {
-  State.reset();
-  let last = FileSave.export_as_json();
-  setInterval(() => {
-    const current = FileSave.export_as_json();
-    if (current !== last) {
-      api.saveTemplate(filename, JSON.parse(current)).catch((e) => {
-        alert("Failed to save template: " + e.toString());
-        console.error(e);
-      });
-    } else {
-      console.log("no change");
+    if (saving.value || now - lastSavedAt.value < 5e3) {
+      if (!saveTimer) {
+        saveTimer = setTimeout(() => {
+          saveTimer = 0;
+          onChange();
+        }, 5e3);
+      }
+      return;
     }
-  }, 10e3);
-});
+
+    doSave();
+  };
+
+  paint.onPaintChange = (addSeq) => {
+    editSequence.value += addSeq;
+    onChange();
+  };
+
+  watchEffect(() => enabled.value && onChange());
+//   watchEffect(() => console.log({ editSequence: editSequence.value }));
+
+  return reactive({
+    unsavedOpCnt,
+    saving: readonly(saving),
+    savingError: readonly(savingError),
+    save: () => saving.value || doSave(),
+  });
+}

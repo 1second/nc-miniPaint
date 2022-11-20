@@ -1,7 +1,8 @@
+/// <reference types="vitest" />
 import { defineConfig, Plugin } from "vite";
 import ViteRequireContext from "@originjs/vite-plugin-require-context";
 import requireTransform from "vite-plugin-require-transform";
-
+import vue from "@vitejs/plugin-vue";
 const replaceNodeModulesBadImport: Plugin = {
   name: "replace-node-module",
   enforce: "pre",
@@ -27,6 +28,7 @@ const replaceNodeModulesBadImport: Plugin = {
 };
 export default defineConfig({
   plugins: [
+    vue(),
     requireTransform({}),
     replaceNodeModulesBadImport,
     ViteRequireContext({

@@ -2,15 +2,16 @@
   "compilerOptions": {
     "target": "es2018",
     "module": "esnext",
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom"],
     "moduleResolution": "node",
     "esModuleInterop": true,
     "strict": true,
-    "strictNullChecks": true,
+    "jsx": "preserve",
+    "sourceMap": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
-    "allowJs": true,
+    "allowJs": true
   },
-  "include": ["*.json", "**/*.json"]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
 }
