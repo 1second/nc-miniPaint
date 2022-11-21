@@ -82,7 +82,9 @@ export async function loadImage(src: string, needBase64 = true) {
 export async function initTplVarImgElement(tplVars: MiniPaint.TplVar[]) {
   for (const v of tplVars) {
     if (v.type === "image") {
-      const { img } = await loadImage(v.data, false);
+      const { img } = await loadImage(v.data, false).catch((e) => {
+        throw new Error("载入图片失败：" + v.data);
+      });
       v.value = img;
     }
   }

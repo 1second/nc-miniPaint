@@ -27,11 +27,10 @@ const autoSave = useAutoSave(
 
 let loadAndOpen = async () => {
   const tpl = await api.getTemplate(props.filename);
-  await initTplVarImgElement(tpl._tplVars).catch(() =>
-    Promise.reject("载入图片失败")
-  );
+  tpl._tplVars = tpl._tplVars || [];
+  await initTplVarImgElement(tpl._tplVars);
   props.paint.AppConfig._tplVarManager.setTplVars(tpl._tplVars);
-  props.paint.FileOpen.load_json(tpl);
+  await props.paint.FileOpen.load_json(tpl);
   props.paint.State.reset();
   state.loaded = true;
 };
@@ -49,7 +48,7 @@ loadAndOpen();
     <div class="loading-mask" v-if="!state.loaded">
       <Loading v-show="state.loading" />
       <div v-show="!state.loading && state.loadingError">
-        <p style="color: red">加载模板错误： {{ state.loadingError }}</p>
+        <pre style="color: red">加载模板错误： {{ state.loadingError }}</pre>
         <a href="javascript:;" @click="loadAndOpen">重试</a>
       </div>
     </div>

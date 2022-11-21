@@ -1,9 +1,15 @@
-import { reactive, Ref, ref } from "vue";
+import { reactive, Ref, ref, computed, ComputedRef } from "vue";
 import { deepCopy } from "./util";
+import { compileExpression, Options } from "filtrex";
+import vue from "@vitejs/plugin-vue";
 const proxyVersionObjKey = Symbol("proxyVersionObjKey");
 const isProxyObjKey = Symbol("isProxyObjKey");
 const originalObjKey = Symbol("originalObjKey");
-
+const compileExprOptions: Options = {
+  extraFunctions: {
+    now: () => new Date().toLocaleString(),
+  },
+};
 export interface BindInfo {
   varName: string;
   originalValue: any;
@@ -23,6 +29,7 @@ export class TplVarManager {
 
   private proxyHandler: ProxyHandler<any>;
   readonly bindingSeq: Ref<number>;
+  tplVarValueMap: ComputedRef<Record<string, any>>;
 
   constructor(originConfig: MiniPaint.AppConfig) {
     (window as any).tplVarManager = this;
@@ -38,6 +45,14 @@ export class TplVarManager {
         ]
       )
     );
+    this.tplVarValueMap = computed(() => {
+      const map: Record<string, any> = {};
+      this.tplVars.forEach((v) => {
+        if (!v.expression) map[v.name] = v.value;
+      });
+      return map;
+    });
+    this.tplVars.forEach((v) => this.checkVar(v));
     this.bindingSeq = ref(0);
 
     this.proxyHandler = {
@@ -93,7 +108,7 @@ export class TplVarManager {
             v.value = value;
             return true;
           }
-          return false;
+          return true;
         }
 
         target[prop] = value;
@@ -103,6 +118,10 @@ export class TplVarManager {
   }
 
   setTplVars(vars: MiniPaint.TplVar[], overwrite = false) {
+    vars.forEach((v) => {
+      const err = this.checkVar(v);
+      if (err) throw new Error(err);
+    });
     if (overwrite) {
       this.tplVars.splice(0, this.tplVars.length, ...vars);
       return;
@@ -132,7 +151,7 @@ export class TplVarManager {
     return proxy;
   }
 
-  checkVar(v: MiniPaint.TplVar): string {
+  checkVar(v: MiniPaint.TplVar, evalExpr = false): string {
     v.name = v.name.trim();
     if (!v.name) {
       return "变量名不能为空";
@@ -149,11 +168,24 @@ export class TplVarManager {
 
     // todo: check expression
 
-    if (v.expression && v.type === "image")
-      return "暂不支持图片类型表达式，敬请期待";
+    if (typeof v.expression === "string") {
+      if (v.type === "image") return "暂不支持图片类型表达式，敬请期待";
 
-    if (v.expression) {
       v.editLock = true;
+      try {
+        v.data = compileExpression(v.expression, compileExprOptions);
+        v.value = computed(() => {
+          return v.data(this.tplVarValueMap.value);
+        });
+        if (evalExpr) {
+          const test = v.value.value;
+          if (test instanceof Error) throw test;
+          console.log(v.expression, test);
+        }
+      } catch (e: any) {
+        return `表达式错误:[${v.expression}]: ${e.toString()}`;
+      }
+      return "";
     }
 
     if (v.type === "string") {
@@ -192,7 +224,7 @@ export class TplVarManager {
   }
 
   addVar(v: MiniPaint.TplVar) {
-    const err = this.checkVar(v);
+    const err = this.checkVar(v, true);
     if (err) {
       throw new Error(err);
     }

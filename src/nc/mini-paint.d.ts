@@ -1,6 +1,6 @@
 declare namespace MiniPaint {
   interface FileOpen {
-    load_json(json: Object | string): void;
+    load_json(json: Object | string): Promise<void>;
   }
 
   interface FileSave {

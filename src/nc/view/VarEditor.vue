@@ -68,7 +68,7 @@ const addVar = async () => {
 
     if (url.startsWith("data:")) {
       const { dataUrl, img } = await waitPromise(loadImage(url), "图片加载中");
-      v.value = img
+      v.value = img;
       v.data = dataUrl;
     } else {
       const { dataUrl } = await waitPromise(loadImage(url), "图片加载中");
@@ -77,7 +77,7 @@ const addVar = async () => {
       v.data = dataUrl;
     }
   }
-  const err = manager.checkVar(v);
+  const err = manager.checkVar(v, true);
   if (err) {
     alert(err);
     return;
@@ -155,7 +155,13 @@ const getNodeTags = (node: NodeInfo) => {
       <ul class="tips">
         <li>* 变量名只能包含字母、数字、中文、下划线</li>
         <li>* 在渲染图片时，可以传递变量值覆盖默认值</li>
-        <li>* 表达式是通过其他变量动态计算的值，因此渲染时不能传值覆盖</li>
+        <li>
+          * 表达式是通过其他变量动态计算的值，因此渲染时不能传值覆盖。<a
+            href="https://github.com/1second/nc-app-image-render/blob/master/doc/expr.md"
+            target="_blank"
+            >表达式使用说明</a
+          >
+        </li>
       </ul>
       <table>
         <tr>

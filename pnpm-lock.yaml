@@ -17,6 +17,7 @@ specifiers:
   css-loader: ^5.2.6
   exif-js: ^2.3.0
   file-saver: ^2.0.5
+  filtrex: ^3.0.0
   fuzzysort: ^1.1.4
   gif.js.optimized: ^1.0.1
   hermite-resize: git+https://github.com/viliusle/Hermite-resize.git
@@ -45,6 +46,7 @@ dependencies:
   blueimp-canvas-to-blob: registry.npmmirror.com/blueimp-canvas-to-blob/3.29.0
   exif-js: registry.npmmirror.com/exif-js/2.3.0
   file-saver: registry.npmmirror.com/file-saver/2.0.5
+  filtrex: registry.npmmirror.com/filtrex/3.0.0
   fuzzysort: registry.npmmirror.com/fuzzysort/1.9.0
   gif.js.optimized: registry.npmmirror.com/gif.js.optimized/1.0.1
   hermite-resize: github.com/viliusle/Hermite-resize/fae53290d2b03520a6fc81d734c3028902a599c0
@@ -83,7 +85,7 @@ devDependencies:
 packages:
 
   github.com/viliusle/Hermite-resize/fae53290d2b03520a6fc81d734c3028902a599c0:
-    resolution: {commit: fae53290d2b03520a6fc81d734c3028902a599c0, repo: git+ssh://git@github.com/viliusle/Hermite-resize.git, type: git}
+    resolution: {tarball: https://codeload.github.com/viliusle/Hermite-resize/tar.gz/fae53290d2b03520a6fc81d734c3028902a599c0}
     name: hermite-resize
     version: 2.2.10
     dev: false
@@ -3811,6 +3813,12 @@ packages:
     dependencies:
       to-regex-range: registry.npmmirror.com/to-regex-range/5.0.1
     dev: true
+
+  registry.npmmirror.com/filtrex/3.0.0:
+    resolution: {integrity: sha512-7PUty9Bq+shxb6r1QVo0AmwJVY59HNN76YUD5TIkjtyG6nNhWPTe6dJVq4TKaGdl/V329ayG6rHK1sA31Hmz8Q==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/filtrex/-/filtrex-3.0.0.tgz}
+    name: filtrex
+    version: 3.0.0
+    dev: false
 
   registry.npmmirror.com/finalhandler/1.2.0:
     resolution: {integrity: sha512-5uXcUVftlQMFnWC9qu/svkWv3GTd2PfUhK/3PLkYNAe7FbqJMt3515HaxE6eRL74GdsriiwujiawdaB1BpEISg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/finalhandler/-/finalhandler-1.2.0.tgz}
