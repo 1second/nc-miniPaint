@@ -104,10 +104,6 @@ export class TplVarManager {
 
   setTplVars(vars: MiniPaint.TplVar[], overwrite = false) {
     if (overwrite) {
-      console.log(
-        JSON.parse(JSON.stringify(this.tplVars)),
-        JSON.parse(JSON.stringify(vars))
-      );
       this.tplVars.splice(0, this.tplVars.length, ...vars);
       return;
     }
@@ -212,6 +208,12 @@ export class TplVarManager {
     if (varName !== null) {
       const v = this.tplVars.find((i) => i.name == varName);
       if (!v) return `变量 ${varName} 不存在`;
+
+      if (obj[prop] instanceof HTMLImageElement && v.type !== "image")
+        return "图片属性只能绑定到图片变量";
+
+      if (v.type === "image" && !(obj[prop] instanceof HTMLImageElement))
+        return "图片变量只能绑定到图片属性";
     }
 
     // 正常情况下只会出现代理对象，此处做下断言，后续有bug时能定位到问题

@@ -52,7 +52,7 @@ export function deepCopy<T>(obj: T): T {
   return obj;
 }
 
-export async function loadImage(src: string, needBase64 = false) {
+export async function loadImage(src: string, needBase64 = true) {
   return new Promise<{ img: HTMLImageElement; dataUrl: string }>(
     (resolve, reject) => {
       const img = new Image();
@@ -70,7 +70,10 @@ export async function loadImage(src: string, needBase64 = false) {
         const dataUrl = canvas.toDataURL();
         resolve({ img, dataUrl });
       };
-      img.onerror = () => reject("图片加载失败");
+      img.onerror = (e) => {
+        console.log(e, src);
+        reject("图片加载失败");
+      };
       img.src = src;
     }
   );

@@ -65,10 +65,17 @@ const addVar = async () => {
       alert("请输入图片地址或选择本地图片文件");
       return;
     }
-    const { dataUrl } = await waitPromise(loadImage(url), "图片加载中");
-    const { img } = await loadImage(dataUrl, false);
-    v.value = img;
-    v.data = dataUrl;
+
+    if (url.startsWith("data:")) {
+      const { dataUrl, img } = await waitPromise(loadImage(url), "图片加载中");
+      v.value = img
+      v.data = dataUrl;
+    } else {
+      const { dataUrl } = await waitPromise(loadImage(url), "图片加载中");
+      const { img } = await loadImage(dataUrl, false);
+      v.value = img;
+      v.data = dataUrl;
+    }
   }
   const err = manager.checkVar(v);
   if (err) {
@@ -237,7 +244,7 @@ const getNodeTags = (node: NodeInfo) => {
               @click.stop="clickUnbind(nodeInfo)"
               v-if="tag.type === 'binding'"
               class="tag"
-              >{{ tag.value }}xx</a
+              >{{ tag.value }}</a
             >
             <a
               href="javascript:;"
