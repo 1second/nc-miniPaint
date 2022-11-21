@@ -34,7 +34,7 @@ export function useAutoSave(
 
     if (saving.value || now - lastSavedAt.value < 5e3) {
       if (!saveTimer) {
-        saveTimer = setTimeout(() => {
+        saveTimer = window.setTimeout(() => {
           saveTimer = 0;
           onChange();
         }, 5e3);
@@ -52,6 +52,13 @@ export function useAutoSave(
 
   watchEffect(() => enabled.value && onChange());
   //   watchEffect(() => console.log({ editSequence: editSequence.value }));
+
+  // hack: disable mini-paint original alert on leave
+  window.addEventListener("beforeunload", function (e) {
+    if (unsavedOpCnt.value == 0) {
+      e.stopPropagation();
+    }
+  });
 
   return reactive({
     unsavedOpCnt,

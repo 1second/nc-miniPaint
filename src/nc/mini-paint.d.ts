@@ -9,6 +9,7 @@ declare namespace MiniPaint {
 
   interface State {
     reset(): void;
+    do_action(action: Base_action): Promise<void>;
   }
 
   interface AppConfig {
@@ -23,6 +24,7 @@ declare namespace MiniPaint {
     boolean: boolean;
     image: string;
     object: any;
+    expression: any;
   };
 
   type TplVarT<Type extends keyof TplVarTypeMap> = {
@@ -30,6 +32,7 @@ declare namespace MiniPaint {
     type: Type;
     value: TplVarTypeMap[Type];
     expression?: string;
+    editLock?: boolean;
   };
 
   type StringTplVar = TplVarT<"string">;
@@ -56,6 +59,7 @@ declare namespace MiniPaint {
 interface MiniPaintApp {
   onPaintInitialized: () => void;
   onPaintChange: (addSeq: number) => void;
+  doDummyAction(desc: string): Promise<void>;
   readonly FileOpen: MiniPaint.FileOpen;
   readonly FileSave: MiniPaint.FileSave;
   readonly State: MiniPaint.State;

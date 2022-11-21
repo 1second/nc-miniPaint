@@ -36,3 +36,7 @@ export function wrapAsync<T extends (...args: any[]) => Promise<any>>(
       });
   }) as any;
 }
+
+export function deepCopy<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}

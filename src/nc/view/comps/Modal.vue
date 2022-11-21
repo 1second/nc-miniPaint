@@ -25,7 +25,7 @@ const emit = defineEmits<{
             class="modal-default-button"
             @click="emit('update:visible', false)"
           >
-            OK
+            关闭
           </button>
         </slot>
       </div>

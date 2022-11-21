@@ -1,6 +1,17 @@
-import { reactive } from "vue";
+import { reactive, Ref, ref } from "vue";
 const proxyVersionObjKey = Symbol("proxyVersionObjKey");
 const isProxyObjKey = Symbol("isProxyObjKey");
+const originalObjKey = Symbol("originalObjKey");
+
+export interface BindInfo {
+  varName: string;
+  originalValue: any;
+}
+
+interface HasBindingObj {
+  [key: string]: any;
+  $tplVarBindings: Record<string, BindInfo>;
+}
 
 // chinese, alphabet, number, underscore, dash
 const validTplVarName = /^[a-zA-Z0-9_\u4e00-\u9fa5-]+$/;
@@ -10,6 +21,7 @@ export class TplVarManager {
   readonly tplVars: MiniPaint.TplVar[];
 
   private proxyHandler: ProxyHandler<any>;
+  readonly bindingSeq: Ref<number>;
 
   constructor(originConfig: MiniPaint.AppConfig) {
     (window as any).tplVarManager = this;
@@ -27,23 +39,79 @@ export class TplVarManager {
         )
       )
     );
+    this.bindingSeq = ref(0);
 
     this.proxyHandler = {
       get: (target, prop) => {
+        if (prop === originalObjKey) return target;
         if (prop === isProxyObjKey) return true;
         if (target === this.originConfig && prop === "_tplVarManager") {
           return this;
         }
+        const t = target as HasBindingObj;
+        if (
+          typeof prop === "string" &&
+          t.$tplVarBindings &&
+          t.$tplVarBindings[prop]
+        ) {
+          const binding = t.$tplVarBindings[prop];
+          const v = this.tplVars.find((i) => i.name == binding.varName);
+          if (v) return v.value;
+          console.warn(`变量 ${binding.varName} 不存在`, target, prop);
+          return binding.originalValue;
+        }
         return this.makeProxy(target[prop]);
       },
       set: (target, prop, value) => {
+        if (
+          typeof value === "object" &&
+          value !== null &&
+          value !== "undefined"
+        ) {
+          if (value[originalObjKey]) {
+            // console.warn("set proxy to proxy", {
+            //   target,
+            //   prop,
+            //   value,
+            // });
+            value = value[originalObjKey];
+          }
+        }
+
+        const t = target as HasBindingObj;
+        if (
+          typeof prop === "string" &&
+          t.$tplVarBindings &&
+          t.$tplVarBindings[prop]
+        ) {
+          const binding = t.$tplVarBindings[prop];
+          const v = this.tplVars.find((i) => i.name == binding.varName);
+          if (!v) {
+            console.warn(`变量 ${binding.varName} 不存在`, target, prop);
+            return false;
+          }
+          if (v.type !== "expression" && !v.editLock) {
+            v.value = value;
+            return true;
+          }
+          return false;
+        }
+
         target[prop] = value;
         return true;
       },
     };
   }
 
-  setTplVars(vars: MiniPaint.TplVar[]) {
+  setTplVars(vars: MiniPaint.TplVar[], overwrite = false) {
+    if (overwrite) {
+      console.log(
+        JSON.parse(JSON.stringify(this.tplVars)),
+        JSON.parse(JSON.stringify(vars))
+      );
+      this.tplVars.splice(0, this.tplVars.length, ...vars);
+      return;
+    }
     vars.forEach((v) => {
       const idx = this.tplVars.findIndex((i) => v.name === i.name);
       if (idx > -1) {
@@ -78,6 +146,10 @@ export class TplVarManager {
 
     if (!validTplVarName.test(v.name)) {
       return "变量名只能包含中文、字母、数字、下划线、中划线";
+    }
+
+    if (v.type === "expression") {
+      v.editLock = true;
     }
 
     if (v.type === "string") {
@@ -115,12 +187,64 @@ export class TplVarManager {
     if (err) {
       throw new Error(err);
     }
-    const exist = this.tplVars.find((i) => i.name == v.name);
-    if (exist) {
-      Object.assign(exist, v);
+    const exist = this.tplVars.findIndex((i) => i.name == v.name);
+    if (exist > -1) {
+      this.tplVars.splice(exist, 1, v);
       return;
     }
     this.tplVars.push(v);
+  }
+
+  checkBinding(varName: string | null, obj: any, prop: string): string {
+    if (varName !== null) {
+      const v = this.tplVars.find((i) => i.name == varName);
+      if (!v) return `变量 ${varName} 不存在`;
+    }
+
+    // 正常情况下只会出现代理对象，此处做下断言，后续有bug时能定位到问题
+    if (!obj[isProxyObjKey]) return "内部错误: NOT_A_PROXY";
+
+    if (obj[prop] === undefined) return `对象 ${obj} 没有属性 ${prop}`;
+
+    // if (typeof obj[prop] !== v.type) {
+    // return `对象 ${obj} 的属性 ${prop} 类型不匹配`;
+    // }
+
+    return "";
+  }
+
+  addBinding(varName: string | null, obj: any, prop: string) {
+    const err = this.checkBinding(varName, obj, prop);
+    if (err) {
+      throw new Error(err);
+    }
+    this.bindingSeq.value++;
+    const originalObj = obj[originalObjKey] as HasBindingObj;
+    const bindings =
+      originalObj.$tplVarBindings || (originalObj.$tplVarBindings = {});
+    if (varName === null) {
+      if (bindings[prop]) {
+        originalObj[prop] = bindings[prop].originalValue;
+        delete bindings[prop];
+      }
+      return;
+    }
+    if (bindings[prop]) {
+      bindings[prop].varName = varName;
+    } else {
+      bindings[prop] = {
+        varName,
+        originalValue: obj[prop],
+      };
+    }
+  }
+
+  getBinding(obj: any, prop: string): BindInfo | null {
+    if (typeof obj !== "object" || obj === null) return null;
+    const originalObj = obj[originalObjKey] as HasBindingObj;
+    const bindings = originalObj.$tplVarBindings;
+    if (!bindings) return null;
+    return bindings[prop] || null;
   }
 }
 

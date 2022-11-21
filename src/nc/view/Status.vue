@@ -93,7 +93,12 @@ loadAndOpen();
         {{ props.filename }}
       </div>
     </div>
-    <Modal v-model:visible="state.showVarEditor" title="编辑模板变量">
+    <Modal
+      visible
+      @update:visible="state.showVarEditor = $event"
+      v-if="state.showVarEditor"
+      title="编辑模板变量"
+    >
       <VarEditor :paint="props.paint" />
     </Modal>
   </div>

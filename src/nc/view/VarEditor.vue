@@ -1,8 +1,10 @@
 <script lang="ts" setup>
-import { PropType, reactive, watchEffect, computed } from "vue";
+import { PropType, reactive, watchEffect, computed, watch } from "vue";
 import { TplVarManager } from "../tplVar";
 import JsonTree from "./comps/JsonTree.vue";
-import { JsonTreeCtx } from "./comps/JsonTree.vue";
+import { JsonTreeCtx, NodeInfo } from "./comps/JsonTree.vue";
+import { EditVarAction } from "../actions/EditVarAction";
+import { VarBindingAction } from "../actions/VarBindingAction";
 const props = defineProps({
   paint: {
     type: Object as PropType<MiniPaintApp>,
@@ -13,43 +15,79 @@ const manager = props.paint.AppConfig._tplVarManager as TplVarManager;
 
 const jsonCtx: JsonTreeCtx = reactive({
   selected: undefined,
+  filterProps: (obj: any, prop: string) => {
+    if (prop === "$tplVarBindings") return false;
+    return true;
+  },
 });
-watchEffect(() => console.log(jsonCtx.selected));
 const addVarForm = reactive({
   name: "",
   isExpression: false,
   type: "string",
   value: "",
+  editLock: false,
 });
 const addVar = () => {
-  const v = {
+  const v: MiniPaint.ObjectTplVar = {
     name: addVarForm.name,
-    type: addVarForm.type,
+    type: addVarForm.type as any,
     value: addVarForm.value,
     expression: addVarForm.isExpression ? addVarForm.value : undefined,
-  } as any;
+    editLock: addVarForm.editLock ? true : undefined,
+  };
   const err = manager.checkVar(v);
   if (err) {
     alert(err);
     return;
   }
-  manager.addVar(v);
+  EditVarAction.runEdit(props.paint, () => manager.addVar(v));
   Object.assign(addVarForm, {
     name: "",
     isExpression: false,
     type: "string",
     value: "",
+    editLock: false,
   });
 };
 const addBindingForm = reactive({
   layerId: 0,
   varName: "",
 });
+watch(
+  () => addBindingForm.layerId,
+  () => (jsonCtx.selected = undefined)
+);
 const selectedLayer = computed(() => {
   return props.paint.AppConfig.layers.find(
     (v) => v.id === addBindingForm.layerId
   );
 });
+const clickAddBinding = () => {
+  const sel = jsonCtx.selected;
+  if (!sel) {
+    alert("先选中一个绑定目标");
+    return;
+  }
+  const err = manager.checkBinding(addBindingForm.varName, sel.obj, sel.prop);
+  if (err) {
+    alert(err);
+    return;
+  }
+  props.paint.State.do_action(
+    new VarBindingAction(manager, sel.obj, sel.prop, addBindingForm.varName)
+  );
+  jsonCtx.selected?.rerender();
+};
+const clickUnbind = (node: NodeInfo) => {
+  props.paint.State.do_action(
+    new VarBindingAction(manager, node.obj, node.prop, null)
+  );
+};
+const getNodeBinding = (node: NodeInfo) => {
+  const layer = selectedLayer.value;
+  if (!layer) return undefined;
+  return manager.getBinding(node.obj, node.prop);
+};
 </script>
 
 <template>
@@ -64,6 +102,7 @@ const selectedLayer = computed(() => {
         <th>变量名</th>
         <th>类型</th>
         <th>值</th>
+        <th>编辑锁定</th>
       </tr>
       <tr v-for="v in manager.tplVars" :key="v.name">
         <td>{{ v.name }}</td>
@@ -73,15 +112,18 @@ const selectedLayer = computed(() => {
         </td>
         <td v-if="v.expression"></td>
         <td v-else>{{ v.value }}</td>
+        <td>{{ v.editLock ? "锁定" : "未锁定" }}</td>
       </tr>
     </table>
     <div class="add-form">
+      变量名：
       <input
         type="text"
         v-model="addVarForm.name"
         placeholder="变量名"
         @keyup.enter="addVar"
       />
+      类型：
       <select v-model="addVarForm.type">
         <option value="string">字符串</option>
         <option value="number">数字</option>
@@ -94,6 +136,8 @@ const selectedLayer = computed(() => {
         v-model="addVarForm.isExpression"
         @change="addVarForm.value = ''"
       />
+      <span>编辑锁定：</span>
+      <input type="checkbox" v-model="addVarForm.editLock" />
       <input
         type="text"
         v-model="addVarForm.value"
@@ -111,7 +155,18 @@ const selectedLayer = computed(() => {
           path=""
           :ctx="jsonCtx"
           init-expanded
-        />
+          :seq="manager.bindingSeq.value"
+        >
+          <template #pre-desc="{ nodeInfo }">
+            <a
+              href="javascript:;"
+              @click.stop="clickUnbind(nodeInfo)"
+              v-if="getNodeBinding(nodeInfo)"
+              class="tag"
+              >{{ getNodeBinding(nodeInfo)?.varName }}</a
+            >
+          </template>
+        </JsonTree>
       </div>
     </div>
     <div class="add-binding" style="display: flex">
@@ -137,7 +192,7 @@ const selectedLayer = computed(() => {
           {{ v.name }}
         </option>
       </select>
-      <button disabled>绑定</button>
+      <button @click="clickAddBinding">绑定</button>
     </div>
   </div>
 </template>

@@ -2,6 +2,7 @@ import { createApp, markRaw } from "vue";
 import { getLocationQuery } from "./util";
 import Status from "./view/Status.vue";
 import { ncConfigWithVar } from "./tplVar";
+import { DummyAction } from "./actions/dummy";
 let onPaintInitialized = () => 0 as any;
 
 const paintInit = new Promise<void>((r) => (onPaintInitialized = r));
@@ -23,11 +24,17 @@ function paintApp(): MiniPaintApp {
     "FileSave",
     "State",
     "AppConfig",
+    "doDummyAction",
   ];
   markRaw(g.AppConfig);
 
+  const doDummyAction = async (desc: string) => {
+    g.State.do_action(new DummyAction(desc));
+  };
+
   return new Proxy(dummy, {
     get(target, prop: AppProp) {
+      if (prop === "doDummyAction") return doDummyAction;
       if (!props.includes(prop)) return void 0;
       return g[prop];
     },

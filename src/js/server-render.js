@@ -29,6 +29,7 @@ function initLayer() {
     color: "#008000",
     filters: [],
     render_function: null,
+    $tplVarBindings: null,
   };
 }
 

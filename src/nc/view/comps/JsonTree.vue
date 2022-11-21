@@ -8,13 +8,26 @@ import {
   provide,
   markRaw,
 } from "vue";
+
 export type JsonTreeCtx = {
   selected?: {
     path: string;
     obj: any;
     prop: string;
+    rerender: () => void;
   };
+  filterProps: (obj: any, prop: string) => boolean;
 };
+export type NodeInfo = {
+  path: string;
+  obj: any;
+  prop: string;
+  rerender: () => void;
+};
+
+const emit = defineEmits<{
+  (event: "renderNeeded"): void;
+}>();
 const props = defineProps({
   ctx: {
     type: Object as PropType<JsonTreeCtx>,
@@ -34,6 +47,7 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  seq: Number,
 });
 const ctx = computed(() => props.ctx);
 const selected = computed(() => {
@@ -43,7 +57,14 @@ const selected = computed(() => {
     ctx.value.selected.prop === props.prop
   );
 });
+
+const rerenderRef = ref(0);
+
 const info = computed(() => {
+  if (`${rerenderRef.value}` === "dummy")
+    throw new Error("never reach here, only for ref tracking");
+  if (`${props.seq}` === "dummy")
+    throw new Error("never reach here, only for ref tracking");
   if (props.data === null) {
     return {
       type: "null",
@@ -62,18 +83,25 @@ const info = computed(() => {
     return {
       type: "array",
       desc: `[${props.data.length}]`,
-      children: props.data.map((v, idx) => ({ prop: idx, data: v })),
+      children: props.data.map((v, idx) => ({ prop: `${idx}`, data: v })),
     };
   }
   if (typeof props.data === "object") {
-    return {
+    const info = {
       type: "object",
       desc: `{${Object.keys(props.data).length}}`,
       children: Object.entries(props.data).map(([k, v]) => ({
         prop: k,
         data: v,
       })),
+      rerenderRef: ref(0),
     };
+    if (props.ctx.filterProps) {
+      info.children = info.children.filter((i) =>
+        props.ctx.filterProps(props.data, i.prop)
+      );
+    }
+    return info;
   }
   if (typeof props.data === "string") {
     return {
@@ -100,16 +128,20 @@ const info = computed(() => {
   };
 });
 const expand = ref(props.initExpanded);
+const nodeInfo: NodeInfo = markRaw({
+  path: props.path,
+  obj: props.parent,
+  prop: props.prop,
+  rerender: () => {
+    emit("renderNeeded");
+  },
+});
 const clickSelect = () => {
   if (selected.value) {
     ctx.value.selected = undefined;
     return;
   }
-  ctx.value.selected = markRaw({
-    path: props.path,
-    obj: props.parent,
-    prop: props.prop,
-  });
+  ctx.value.selected = nodeInfo;
 };
 </script>
 <template>
@@ -123,7 +155,8 @@ const clickSelect = () => {
         >{{ expand ? "-" : "+" }}</span
       >
       <span class="name"> {{ props.prop }} </span>:
-      <span :class="[`type-${info.type}`]" :title="info.title">
+      <slot name="pre-desc" :node-info="nodeInfo"> </slot>
+      <span :class="[`type-${info.type}`]" :title="info.desc">
         {{ info.desc }}
       </span>
     </p>
@@ -135,7 +168,12 @@ const clickSelect = () => {
           :prop="c.prop"
           :ctx="props.ctx"
           :path="props.path + '/' + c.prop"
-        />
+          @render-needed="rerenderRef++"
+        >
+          <template #pre-desc="{ nodeInfo }">
+            <slot name="pre-desc" :node-info="nodeInfo"> </slot>
+          </template>
+        </JsonTree>
       </div>
     </div>
   </div>
