@@ -22,6 +22,7 @@ export class EditVarAction extends BaseAction {
     super.do();
     const manager = this.paint.AppConfig._tplVarManager as TplVarManager;
     manager.setTplVars(JSON.parse(this.after), true);
+    this.paint.AppConfig.need_render = true;
   }
 
   undo(): void {
@@ -30,6 +31,7 @@ export class EditVarAction extends BaseAction {
     console.log(this.before, this.after);
     const manager = this.paint.AppConfig._tplVarManager as TplVarManager;
     manager.setTplVars(JSON.parse(this.before), true);
+    this.paint.AppConfig.need_render = true;
   }
 
   static async runEdit(paint: MiniPaintApp, fn: () => void) {
@@ -41,6 +43,7 @@ export class EditVarAction extends BaseAction {
       return;
     }
     const action = new EditVarAction(paint, before, after, true);
+    paint.AppConfig.need_render = true;
     return paint.State.do_action(action);
   }
 }

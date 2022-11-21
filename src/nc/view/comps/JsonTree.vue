@@ -143,6 +143,9 @@ const clickSelect = () => {
   }
   ctx.value.selected = nodeInfo;
 };
+const slots = {
+    preDesc: 'pre-desc'
+};
 </script>
 <template>
   <div class="json-tree">
@@ -170,8 +173,8 @@ const clickSelect = () => {
           :path="props.path + '/' + c.prop"
           @render-needed="rerenderRef++"
         >
-          <template #pre-desc="{ nodeInfo }">
-            <slot name="pre-desc" :node-info="nodeInfo"> </slot>
+          <template #[slots.preDesc]="{ nodeInfo }">
+            <slot name="pre-desc" :node-info="nodeInfo as NodeInfo"> </slot>
           </template>
         </JsonTree>
       </div>

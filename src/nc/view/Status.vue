@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { reactive, toRefs, computed } from "vue";
 import { api } from "../api/api";
-import { wrapAsync } from "../util";
+import { initTplVarImgElement, wrapAsync } from "../util";
 import Loading from "./comps/Loading.vue";
 import { useAutoSave } from "../hook";
 import Modal from "./comps/Modal.vue";
@@ -27,6 +27,9 @@ const autoSave = useAutoSave(
 
 let loadAndOpen = async () => {
   const tpl = await api.getTemplate(props.filename);
+  await initTplVarImgElement(tpl._tplVars).catch(() =>
+    Promise.reject("载入图片失败")
+  );
   props.paint.AppConfig._tplVarManager.setTplVars(tpl._tplVars);
   props.paint.FileOpen.load_json(tpl);
   props.paint.State.reset();

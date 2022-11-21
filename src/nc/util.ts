@@ -38,5 +38,49 @@ export function wrapAsync<T extends (...args: any[]) => Promise<any>>(
 }
 
 export function deepCopy<T>(obj: T): T {
-  return JSON.parse(JSON.stringify(obj));
+  if (Array.isArray(obj)) {
+    return obj.map(deepCopy) as any;
+  }
+  if (typeof obj === "object") {
+    if (obj instanceof HTMLElement) return obj;
+    const res: Record<string, any> = {};
+    for (const key in obj) {
+      res[key] = deepCopy(obj[key]);
+    }
+    return res as any;
+  }
+  return obj;
+}
+
+export async function loadImage(src: string, needBase64 = false) {
+  return new Promise<{ img: HTMLImageElement; dataUrl: string }>(
+    (resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (!needBase64) {
+          resolve({ img, dataUrl: "" });
+          return;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0);
+        const dataUrl = canvas.toDataURL();
+        resolve({ img, dataUrl });
+      };
+      img.onerror = () => reject("图片加载失败");
+      img.src = src;
+    }
+  );
+}
+
+export async function initTplVarImgElement(tplVars: MiniPaint.TplVar[]) {
+  for (const v of tplVars) {
+    if (v.type === "image") {
+      const { img } = await loadImage(v.data, false);
+      v.value = img;
+    }
+  }
 }

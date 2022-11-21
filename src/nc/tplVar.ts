@@ -1,4 +1,5 @@
 import { reactive, Ref, ref } from "vue";
+import { deepCopy } from "./util";
 const proxyVersionObjKey = Symbol("proxyVersionObjKey");
 const isProxyObjKey = Symbol("isProxyObjKey");
 const originalObjKey = Symbol("originalObjKey");
@@ -27,16 +28,14 @@ export class TplVarManager {
     (window as any).tplVarManager = this;
     this.originConfig = originConfig;
     this.tplVars = reactive(
-      JSON.parse(
-        JSON.stringify(
-          originConfig._tplVars || [
-            {
-              name: "版权信息",
-              type: "string",
-              value: "NC模板图片渲染器, By 一秒云科技",
-            },
-          ]
-        )
+      deepCopy(
+        originConfig._tplVars || [
+          {
+            name: "版权信息",
+            type: "string",
+            value: "NC模板图片渲染器, By 一秒云科技",
+          },
+        ]
       )
     );
     this.bindingSeq = ref(0);
@@ -90,7 +89,7 @@ export class TplVarManager {
             console.warn(`变量 ${binding.varName} 不存在`, target, prop);
             return false;
           }
-          if (v.type !== "expression" && !v.editLock) {
+          if (!v.expression && !v.editLock) {
             v.value = value;
             return true;
           }
@@ -122,7 +121,7 @@ export class TplVarManager {
     });
   }
 
-  get proxy() {
+  get proxy(): MiniPaint.AppConfig {
     return this.makeProxy(this.originConfig);
   }
 
@@ -130,6 +129,8 @@ export class TplVarManager {
     if (typeof obj !== "object" || obj === null) return obj;
     if (obj && obj[isProxyObjKey]) return obj;
     if (obj && obj[proxyVersionObjKey]) return obj[proxyVersionObjKey];
+    if (obj instanceof HTMLElement) return obj;
+
     const proxy = new Proxy(obj, this.proxyHandler);
     obj[proxyVersionObjKey] = proxy;
     return proxy;
@@ -148,7 +149,14 @@ export class TplVarManager {
       return "变量名只能包含中文、字母、数字、下划线、中划线";
     }
 
-    if (v.type === "expression") {
+    if (typeof v.expression !== "string") v.expression = undefined;
+
+    // todo: check expression
+
+    if (v.expression && v.type === "image")
+      return "暂不支持图片类型表达式，敬请期待";
+
+    if (v.expression) {
       v.editLock = true;
     }
 
@@ -168,8 +176,12 @@ export class TplVarManager {
       return "";
     }
     if (v.type === "image") {
+      if (!(v.value instanceof HTMLImageElement))
+        return "图片类型的变量值必须是图片";
+      if (!v.data) return "图片类型缺少图片数据";
       return "";
     }
+
     if (v.type === "object") {
       if (typeof v.value === "object") return "";
       try {
@@ -179,7 +191,8 @@ export class TplVarManager {
       }
       return "";
     }
-    return `未知类型的变量 ${v.type}`;
+
+    return `未知类型的变量 ${(v as any).type}`;
   }
 
   addVar(v: MiniPaint.TplVar) {

@@ -16,15 +16,15 @@ declare namespace MiniPaint {
     layers: Layer[];
     _tplVars: TplVar[];
     _tplVarManager: TplVarManager;
+    need_render: boolean;
   }
 
   type TplVarTypeMap = {
     string: string;
     number: number;
     boolean: boolean;
-    image: string;
+    image: HTMLImageElement;
     object: any;
-    expression: any;
   };
 
   type TplVarT<Type extends keyof TplVarTypeMap> = {
@@ -33,6 +33,7 @@ declare namespace MiniPaint {
     value: TplVarTypeMap[Type];
     expression?: string;
     editLock?: boolean;
+    data?: any;
   };
 
   type StringTplVar = TplVarT<"string">;
@@ -41,9 +42,14 @@ declare namespace MiniPaint {
   type ImageTplVar = TplVarT<"image">;
   type ObjectTplVar = TplVarT<"object">;
 
-  type TplVar = TplVarT<keyof TplVarTypeMap>;
+  type TplVar1 = TplVarT<keyof TplVarTypeMap>;
 
-  type TplVar1 = StringTplVar | NumberTplVar | BooleanTplVar;
+  type TplVar =
+    | StringTplVar
+    | NumberTplVar
+    | BooleanTplVar
+    | ImageTplVar
+    | ObjectTplVar;
 
   interface Layer {
     id: number;
