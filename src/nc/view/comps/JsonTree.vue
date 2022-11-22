@@ -1,13 +1,5 @@
 <script lang="ts" setup>
-import {
-  PropType,
-  reactive,
-  computed,
-  ref,
-  inject,
-  provide,
-  markRaw,
-} from "vue";
+import { PropType, computed, ref, markRaw } from "vue";
 
 export type JsonTreeCtx = {
   selected?: {
@@ -16,6 +8,7 @@ export type JsonTreeCtx = {
     prop: string;
     rerender: () => void;
   };
+  enableSelect?: boolean;
   filterProps: (obj: any, prop: string) => boolean;
 };
 export type NodeInfo = {
@@ -100,6 +93,7 @@ const info = computed(() => {
       info.children = info.children.filter((i) =>
         props.ctx.filterProps(props.data, i.prop)
       );
+      `{${info.children.length}}`;
     }
     return info;
   }
@@ -141,10 +135,12 @@ const clickSelect = () => {
     ctx.value.selected = undefined;
     return;
   }
+  if (!ctx.value.enableSelect) return;
   ctx.value.selected = nodeInfo;
 };
 const slots = {
-    preDesc: 'pre-desc'
+  preDesc: "pre-desc",
+  postDesc: "post-desc",
 };
 </script>
 <template>
@@ -154,7 +150,7 @@ const slots = {
         class="expand text-btn"
         style="margin-right: 5px"
         :style="{ visibility: info.children ? 'visible' : 'hidden' }"
-        @click="expand = !expand"
+        @click.stop="expand = !expand"
         >{{ expand ? "-" : "+" }}</span
       >
       <span class="name"> {{ props.prop }} </span>:
@@ -162,6 +158,7 @@ const slots = {
       <span :class="[`type-${info.type}`]" :title="info.desc">
         {{ info.desc }}
       </span>
+      <slot name="post-desc" :node-info="nodeInfo"> </slot>
     </p>
     <div v-if="info.children && expand">
       <div v-for="c in info.children" :key="c.prop">
@@ -173,8 +170,8 @@ const slots = {
           :path="props.path + '/' + c.prop"
           @render-needed="rerenderRef++"
         >
-          <template #[slots.preDesc]="{ nodeInfo }">
-            <slot name="pre-desc" :node-info="nodeInfo as NodeInfo"> </slot>
+          <template v-for="(v, k) in slots" :key="k" #[v]="data: any">
+            <slot :name="v" v-bind="data"> </slot>
           </template>
         </JsonTree>
       </div>

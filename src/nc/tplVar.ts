@@ -1,7 +1,6 @@
 import { reactive, Ref, ref, computed, ComputedRef } from "vue";
 import { deepCopy } from "./util";
 import { compileExpression, Options } from "filtrex";
-import vue from "@vitejs/plugin-vue";
 const proxyVersionObjKey = Symbol("proxyVersionObjKey");
 const isProxyObjKey = Symbol("isProxyObjKey");
 const originalObjKey = Symbol("originalObjKey");
@@ -77,6 +76,9 @@ export class TplVarManager {
         return this.makeProxy(target[prop]);
       },
       set: (target, prop, value) => {
+        if (target === this.originConfig.layers) {
+          if (prop === "length") this.bindingSeq.value++;
+        }
         if (
           typeof value === "object" &&
           value !== null &&
@@ -117,11 +119,17 @@ export class TplVarManager {
     };
   }
 
+  refTrackHint() {
+    if (`${this.bindingSeq.value}` === "dummy")
+      throw new Error("never reach here, only for ref tracking");
+  }
+
   setTplVars(vars: MiniPaint.TplVar[], overwrite = false) {
     vars.forEach((v) => {
       const err = this.checkVar(v);
       if (err) throw new Error(err);
     });
+    this.bindingSeq.value++;
     if (overwrite) {
       this.tplVars.splice(0, this.tplVars.length, ...vars);
       return;
@@ -289,6 +297,7 @@ export class TplVarManager {
   getBinding(obj: any, prop: string): BindInfo | null {
     if (typeof obj !== "object" || obj === null) return null;
     const originalObj = obj[originalObjKey] as HasBindingObj;
+    if (!originalObj) return null;
     const bindings = originalObj.$tplVarBindings;
     if (!bindings) return null;
     return bindings[prop] || null;

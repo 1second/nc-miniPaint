@@ -5,7 +5,6 @@ import JsonTree from "./comps/JsonTree.vue";
 import { JsonTreeCtx, NodeInfo } from "./comps/JsonTree.vue";
 import { EditVarAction } from "../actions/EditVarAction";
 import { VarBindingAction } from "../actions/VarBindingAction";
-import { api } from "../api/api";
 import LoadingArea from "./comps/LoadingArea.vue";
 import { loadImage } from "../util";
 const props = defineProps({
@@ -41,7 +40,6 @@ const addVarForm = reactive({
   editLock: false,
   imageFile: null as any,
 });
-watchEffect(() => console.log(addVarForm.imageFile));
 const addVar = async () => {
   addVarForm.value = addVarForm.value.trim();
   const v: MiniPaint.TplVar = {
@@ -96,31 +94,6 @@ const addBindingForm = reactive({
   layerId: 0,
   varName: "",
 });
-watch(
-  () => addBindingForm.layerId,
-  () => (jsonCtx.selected = undefined)
-);
-const selectedLayer = computed(() => {
-  return props.paint.AppConfig.layers.find(
-    (v) => v.id === addBindingForm.layerId
-  );
-});
-const clickAddBinding = () => {
-  const sel = jsonCtx.selected;
-  if (!sel) {
-    alert("先选中一个绑定目标");
-    return;
-  }
-  const err = manager.checkBinding(addBindingForm.varName, sel.obj, sel.prop);
-  if (err) {
-    alert(err);
-    return;
-  }
-  props.paint.State.do_action(
-    new VarBindingAction(manager, sel.obj, sel.prop, addBindingForm.varName)
-  );
-  jsonCtx.selected?.rerender();
-};
 const clickUnbind = (node: NodeInfo) => {
   props.paint.State.do_action(
     new VarBindingAction(manager, node.obj, node.prop, null)
@@ -128,8 +101,7 @@ const clickUnbind = (node: NodeInfo) => {
 };
 const getNodeTags = (node: NodeInfo) => {
   const tags = [] as { type: string; value: any }[];
-  const layer = selectedLayer.value;
-  if (!layer || !node.obj) return tags;
+  if (!node.obj) return tags;
   const binding = manager.getBinding(node.obj, node.prop);
   if (binding) {
     tags.push({
@@ -147,6 +119,27 @@ const getNodeTags = (node: NodeInfo) => {
   }
   return tags;
 };
+const clickAddBinding2 = (node: NodeInfo, v: MiniPaint.TplVar) => {
+  const binding = manager.getBinding(node.obj, node.prop);
+  if (binding && binding.varName === v.name) return;
+  const err = manager.checkBinding(v.name, node.obj, node.prop);
+  if (err) {
+    alert(err);
+    return;
+  }
+  props.paint.State.do_action(
+    new VarBindingAction(manager, node.obj, node.prop, v.name)
+  );
+  node.rerender();
+};
+const showJson = computed(() => {
+  manager.refTrackHint()
+  const obj = {} as any;
+  props.paint.AppConfig.layers.forEach((l) => {
+    obj[l.name] = l;
+  });
+  return obj;
+});
 </script>
 
 <template>
@@ -176,7 +169,10 @@ const getNodeTags = (node: NodeInfo) => {
             <span v-if="v.expression" class="tag"> 表达式 </span>
             {{ v.type }}
           </td>
-          <td v-if="v.expression"></td>
+          <td v-if="v.expression">
+            <span class="tag"> {{ v.expression }} </span>
+            {{ v.value }}
+          </td>
           <td v-else-if="v.type === 'image'">
             <a href="javascript:;" class="tag tag-img">
               {图片}
@@ -234,9 +230,7 @@ const getNodeTags = (node: NodeInfo) => {
     <hr />
     <div style="max-height: 400px; overflow: auto">
       <JsonTree
-        v-if="selectedLayer"
-        :data="selectedLayer"
-        :key="addBindingForm.layerId"
+        :data="showJson"
         :prop="''"
         path=""
         :ctx="jsonCtx"
@@ -250,6 +244,7 @@ const getNodeTags = (node: NodeInfo) => {
               @click.stop="clickUnbind(nodeInfo)"
               v-if="tag.type === 'binding'"
               class="tag"
+              title="点击解绑"
               >{{ tag.value }}</a
             >
             <a
@@ -263,32 +258,22 @@ const getNodeTags = (node: NodeInfo) => {
             <span v-else>{{ tag }}</span>
           </span>
         </template>
+        <template #post-desc="{ nodeInfo }">
+          <span class="path-hint"> {{ nodeInfo.path }}</span>
+          <span class="bind-var-hint">
+            绑定变量
+
+            <div class="var-list">
+              <div
+                @click.stop="clickAddBinding2(nodeInfo, v)"
+                v-for="v in paint.AppConfig._tplVarManager.tplVars"
+              >
+                {{ v.name }}
+              </div>
+            </div>
+          </span>
+        </template>
       </JsonTree>
-    </div>
-    <div class="add-binding" style="display: flex">
-      图层：
-      <select v-model="addBindingForm.layerId">
-        <option :value="layer.id" v-for="layer in paint.AppConfig.layers">
-          {{ layer.name }}
-        </option>
-      </select>
-      路径：
-      <input
-        type="text"
-        readonly
-        style="flex: 1"
-        :value="jsonCtx.selected?.path"
-      />
-      变量：
-      <select v-model="addBindingForm.varName">
-        <option
-          :value="v.name"
-          v-for="v in paint.AppConfig._tplVarManager.tplVars"
-        >
-          {{ v.name }}
-        </option>
-      </select>
-      <button @click="clickAddBinding">绑定</button>
     </div>
   </LoadingArea>
 </template>
@@ -319,12 +304,56 @@ button:disabled {
   margin-bottom: 10px;
   list-style: none;
 }
-.tag {
+.tag,
+.path-hint,
+.bind-var-hint {
   background-color: #e6e6e6;
   padding: 2px 4px;
   border-radius: 2px;
   font-size: 12px;
   margin-right: 5px;
+}
+.path-hint {
+  display: none;
+  margin-left: 10px;
+  color: blanchedalmond;
+  background-color: #444;
+}
+
+.bind-var-hint {
+  display: none;
+  color: #999;
+  background-color: #eee;
+  /* position: absolute; */
+  /* right: 10px; */
+  user-select: none;
+  position: relative;
+}
+.json-tree .desc:hover .path-hint,
+.json-tree .desc:hover .bind-var-hint {
+  display: inline-block;
+}
+.bind-var-hint .var-list {
+  display: none;
+  background-color: #eee;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 12px;
+  margin-right: 5px;
+  color: #999;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100px;
+}
+.bind-var-hint:hover .var-list {
+  display: block;
+}
+.bind-var-hint .var-list div {
+  cursor: pointer;
+}
+.bind-var-hint .var-list div:hover {
+  color: #000;
 }
 table {
   border-collapse: collapse;
