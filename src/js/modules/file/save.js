@@ -711,6 +711,7 @@ class File_save_class {
 			canvas.height = 1;
 		}
 
+		window.ncPostExportJson && (export_data = window.ncPostExportJson(export_data));
 		return JSON.stringify(export_data, null, "\t");
 	}
 	

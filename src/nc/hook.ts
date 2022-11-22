@@ -1,6 +1,7 @@
 import { ref, reactive, readonly, computed, watchEffect } from "vue";
 import { api } from "./api/api";
-import { wrapAsync } from "./util";
+import { initTplVarImgElement, wrapAsync } from "./util";
+import { EditVarAction } from "./actions/EditVarAction";
 
 export function useAutoSave(
   filename: string,
@@ -19,7 +20,6 @@ export function useAutoSave(
     lastSavedAt.value = Date.now();
     const thisEditSequence = editSequence.value;
     const json = JSON.parse(paint.FileSave.export_as_json());
-    json._tplVars = paint.AppConfig._tplVarManager.tplVars;
     await api.saveTemplate(filename, json);
     lastSavedSequence.value = thisEditSequence;
   };
@@ -66,4 +66,21 @@ export function useAutoSave(
     savingError: readonly(savingError),
     save: () => saving.value || doSave(),
   });
+}
+
+export function hookJsonImportExport(paint: MiniPaintApp) {
+  paint.ncPreLoadJson = async (json, actions) => {
+    json._tplVars = json._tplVars || [];
+    await initTplVarImgElement(json._tplVars);
+    actions.unshift(
+      new EditVarAction(paint, () => {
+        paint.AppConfig._tplVarManager.setTplVars(json._tplVars, true);
+      })
+    );
+  };
+
+  paint.ncPostExportJson = (json) => {
+    json._tplVars = paint.AppConfig._tplVarManager.tplVars;
+    return json;
+  };
 }

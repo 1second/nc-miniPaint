@@ -648,6 +648,7 @@ class File_open_class {
 			}),
 			new app.Actions.Prepare_canvas_action('do')
 		);
+		window.ncPreLoadJson && (await window.ncPreLoadJson(json, actions))
 		await app.State.do_action(
 			new app.Actions.Bundle_action('open_json_file', 'Open JSON File', actions)
 		);

@@ -9,13 +9,13 @@ declare namespace MiniPaint {
 
   interface State {
     reset(): void;
-    do_action(action: Base_action): Promise<void>;
+    do_action(action: import("./actions/baseAction").BaseAction): Promise<void>;
   }
 
   interface AppConfig {
     layers: Layer[];
     _tplVars: TplVar[];
-    _tplVarManager: TplVarManager;
+    _tplVarManager: import("./tplVar").TplVarManager;
     need_render: boolean;
   }
 
@@ -66,6 +66,11 @@ interface MiniPaintApp {
   onPaintInitialized: () => void;
   onPaintChange: (addSeq: number) => void;
   doDummyAction(desc: string): Promise<void>;
+  ncPostExportJson(json: Record<string, any>): Record<string, any>;
+  ncPreLoadJson(
+    json: Record<string, any>,
+    actions: import("./actions/baseAction").BaseAction[]
+  ): Promise<void>;
   readonly FileOpen: MiniPaint.FileOpen;
   readonly FileSave: MiniPaint.FileSave;
   readonly State: MiniPaint.State;
