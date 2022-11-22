@@ -1,11 +1,12 @@
 <script lang="ts" setup>
 import { reactive, toRefs, computed } from "vue";
 import { api } from "../api/api";
-import { wrapAsync } from "../util";
+import { wrapAsync, deepCopy } from "../util";
 import Loading from "./comps/Loading.vue";
 import { useAutoSave } from "../hook";
 import Modal from "./comps/Modal.vue";
 import VarEditor from "./VarEditor.vue";
+import { evalMiniPaintJson } from "../tplEval";
 const props = defineProps<{
   filename: string;
   paint: MiniPaintApp;
@@ -16,7 +17,7 @@ const state = reactive({
   loading: false,
   loaded: false,
   autoSave: true,
-  showVarEditor: true,
+  showVarEditor: false,
 });
 
 const autoSave = useAutoSave(
@@ -39,6 +40,13 @@ loadAndOpen = wrapAsync(
 );
 
 loadAndOpen();
+
+const clickVarToValue = async () => {
+  const s = props.paint.FileSave.export_as_json();
+  const tpl = await evalMiniPaintJson(JSON.parse(s));
+  console.log(JSON.parse(s), tpl);
+  await props.paint.FileOpen.load_json(deepCopy(tpl));
+};
 </script>
 <template>
   <div>
@@ -51,6 +59,7 @@ loadAndOpen();
     </div>
 
     <div class="status-bar">
+      <button @click="clickVarToValue">变量转值</button>
       <div class="auto-save">
         <input
           id="auto-save-checkbox"

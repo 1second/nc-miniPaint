@@ -1,30 +1,17 @@
 import { reactive, Ref, ref, computed, ComputedRef } from "vue";
 import { deepCopy } from "./util";
-import { compileExpression, Options } from "filtrex";
+import { compileExpression } from "filtrex";
+import { HasBindingObj, BindInfo, compileExprOptions, TplVar } from './tplEval';
 const proxyVersionObjKey = Symbol("proxyVersionObjKey");
 const isProxyObjKey = Symbol("isProxyObjKey");
 const originalObjKey = Symbol("originalObjKey");
-const compileExprOptions: Options = {
-  extraFunctions: {
-    now: () => new Date().toLocaleString(),
-  },
-};
-export interface BindInfo {
-  varName: string;
-  originalValue: any;
-}
-
-interface HasBindingObj {
-  [key: string]: any;
-  $tplVarBindings: Record<string, BindInfo>;
-}
 
 // chinese, alphabet, number, underscore, dash
 const validTplVarName = /^[a-zA-Z0-9_\u4e00-\u9fa5-]+$/;
 
 export class TplVarManager {
   readonly originConfig: MiniPaint.AppConfig;
-  readonly tplVars: MiniPaint.TplVar[];
+  readonly tplVars: TplVar[];
 
   private proxyHandler: ProxyHandler<any>;
   readonly bindingSeq: Ref<number>;
@@ -124,7 +111,7 @@ export class TplVarManager {
       throw new Error("never reach here, only for ref tracking");
   }
 
-  setTplVars(vars: MiniPaint.TplVar[], overwrite = false) {
+  setTplVars(vars: TplVar[], overwrite = false) {
     vars.forEach((v) => {
       const err = this.checkVar(v);
       if (err) throw new Error(err);
@@ -159,7 +146,7 @@ export class TplVarManager {
     return proxy;
   }
 
-  checkVar(v: MiniPaint.TplVar, evalExpr = false): string {
+  checkVar(v: TplVar, evalExpr = false): string {
     v.name = v.name.trim();
     if (!v.name) {
       return "变量名不能为空";
@@ -231,7 +218,7 @@ export class TplVarManager {
     return `未知类型的变量 ${(v as any).type}`;
   }
 
-  addVar(v: MiniPaint.TplVar) {
+  addVar(v: TplVar) {
     const err = this.checkVar(v, true);
     if (err) {
       throw new Error(err);

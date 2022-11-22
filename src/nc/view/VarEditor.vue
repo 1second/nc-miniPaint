@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { PropType, reactive, watchEffect, computed, watch, ref } from "vue";
+import { PropType, reactive, computed, ref } from "vue";
 import { TplVarManager } from "../tplVar";
 import JsonTree from "./comps/JsonTree.vue";
 import { JsonTreeCtx, NodeInfo } from "./comps/JsonTree.vue";
@@ -7,6 +7,7 @@ import { EditVarAction } from "../actions/EditVarAction";
 import { VarBindingAction } from "../actions/VarBindingAction";
 import LoadingArea from "./comps/LoadingArea.vue";
 import { loadImage } from "../util";
+import { TplVar } from "../tplEval";
 const props = defineProps({
   paint: {
     type: Object as PropType<MiniPaintApp>,
@@ -42,7 +43,7 @@ const addVarForm = reactive({
 });
 const addVar = async () => {
   addVarForm.value = addVarForm.value.trim();
-  const v: MiniPaint.TplVar = {
+  const v: TplVar = {
     name: addVarForm.name,
     type: addVarForm.type as any,
     value: addVarForm.value,
@@ -90,10 +91,6 @@ const addVar = async () => {
     imageFile: null as any,
   });
 };
-const addBindingForm = reactive({
-  layerId: 0,
-  varName: "",
-});
 const clickUnbind = (node: NodeInfo) => {
   props.paint.State.do_action(
     new VarBindingAction(manager, node.obj, node.prop, null)
@@ -119,7 +116,7 @@ const getNodeTags = (node: NodeInfo) => {
   }
   return tags;
 };
-const clickAddBinding2 = (node: NodeInfo, v: MiniPaint.TplVar) => {
+const clickAddBinding2 = (node: NodeInfo, v: TplVar) => {
   const binding = manager.getBinding(node.obj, node.prop);
   if (binding && binding.varName === v.name) return;
   const err = manager.checkBinding(v.name, node.obj, node.prop);
@@ -133,10 +130,10 @@ const clickAddBinding2 = (node: NodeInfo, v: MiniPaint.TplVar) => {
   node.rerender();
 };
 const showJson = computed(() => {
-  manager.refTrackHint()
+  manager.refTrackHint();
   const obj = {} as any;
   props.paint.AppConfig.layers.forEach((l) => {
-    obj[l.name] = l;
+    obj[`${l.id}#${l.name}`] = l;
   });
   return obj;
 });

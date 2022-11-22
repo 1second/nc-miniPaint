@@ -7,6 +7,12 @@ declare namespace MiniPaint {
     export_as_json(): string;
   }
 
+  interface Layer {
+    id: number;
+    name: string;
+    _varBinding?: VarBinding;
+  }
+
   interface State {
     reset(): void;
     do_action(action: import("./actions/baseAction").BaseAction): Promise<void>;
@@ -14,51 +20,9 @@ declare namespace MiniPaint {
 
   interface AppConfig {
     layers: Layer[];
-    _tplVars: TplVar[];
+    _tplVars: import("./tplEval").TplVar[];
     _tplVarManager: import("./tplVar").TplVarManager;
     need_render: boolean;
-  }
-
-  type TplVarTypeMap = {
-    string: string;
-    number: number;
-    boolean: boolean;
-    image: HTMLImageElement;
-    object: any;
-  };
-
-  type TplVarT<Type extends keyof TplVarTypeMap> = {
-    name: string;
-    type: Type;
-    value: TplVarTypeMap[Type];
-    expression?: string;
-    editLock?: boolean;
-    data?: any;
-  };
-
-  type StringTplVar = TplVarT<"string">;
-  type NumberTplVar = TplVarT<"number">;
-  type BooleanTplVar = TplVarT<"boolean">;
-  type ImageTplVar = TplVarT<"image">;
-  type ObjectTplVar = TplVarT<"object">;
-
-  type TplVar1 = TplVarT<keyof TplVarTypeMap>;
-
-  type TplVar =
-    | StringTplVar
-    | NumberTplVar
-    | BooleanTplVar
-    | ImageTplVar
-    | ObjectTplVar;
-
-  interface Layer {
-    id: number;
-    name: string;
-    _varBinding?: VarBinding;
-  }
-
-  interface VarBinding {
-    [key: string]: string;
   }
 }
 
