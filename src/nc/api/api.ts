@@ -26,9 +26,10 @@ class Api {
   }
 }
 
-let apiBase = "https://nc-app-tpl-img-api.krzb.net";
+let apiBase = "http://img-render-api.fc.krzb.net";
 if (["127.0.0.1", "localhost"].includes(location.hostname)) {
   apiBase = "http://127.0.0.1:9000";
 }
+
 
 export const api = new Api(new Http(apiBase));

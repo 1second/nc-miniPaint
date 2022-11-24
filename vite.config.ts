@@ -1,8 +1,33 @@
 /// <reference types="vitest" />
-import { defineConfig, Plugin } from "vite";
+import { defineConfig, Plugin, PluginOption } from "vite";
 import ViteRequireContext from "@originjs/vite-plugin-require-context";
 import requireTransform from "vite-plugin-require-transform";
 import vue from "@vitejs/plugin-vue";
+import { spawn } from "child_process";
+
+function exec(command: string) {
+  return new Promise<void>((resolve, reject) => {
+    const child = spawn("sh", ["-c", command], {
+      stdio: "inherit",
+    });
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject();
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+const copyStatic: PluginOption = {
+  name: "copy-static",
+  apply: "build",
+  async writeBundle() {
+    await exec(`cp -r images render-dist/assets`);
+  }
+};
+
 const replaceNodeModulesBadImport: Plugin = {
   name: "replace-node-module",
   enforce: "pre",
@@ -34,6 +59,7 @@ export default defineConfig({
     ViteRequireContext({
       projectBasePath: __dirname,
     }),
+    copyStatic,
   ],
   mode: process.env.NODE_ENV,
   root: __dirname,

@@ -13,9 +13,12 @@
   "scripts": {
     "server": "webpack serve --mode development --env development --open",
     "dev": "webpack --mode development",
-    "build": "webpack --mode production",
+    "build-old": "webpack --mode production",
     "test": "vitest run",
-    "jest": "jest"
+    "jest": "jest",
+    "build": "vite build",
+    "upload": "ossutil cp -r -f render-dist/ oss://osec-deploy-pub/frontend/nc-mini-paint",
+    "deploy": "npm run build && npm run upload"
   },
   "repository": {
     "type": "git",
