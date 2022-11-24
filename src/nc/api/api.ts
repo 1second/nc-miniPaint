@@ -18,6 +18,12 @@ class Api {
       data: { filename, data },
     });
   }
+
+  async renderTemplate(filename: string, varMap: any) {
+    return await this.http.post<string>("/api/console/v1/template/render", {
+      data: { filename, varMap },
+    });
+  }
 }
 
 let apiBase = "https://nc-app-tpl-img-api.krzb.net";
@@ -26,4 +32,3 @@ if (["127.0.0.1", "localhost"].includes(location.hostname)) {
 }
 
 export const api = new Api(new Http(apiBase));
-

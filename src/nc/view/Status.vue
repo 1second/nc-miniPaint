@@ -7,6 +7,7 @@ import { useAutoSave } from "../hook";
 import Modal from "./comps/Modal.vue";
 import VarEditor from "./VarEditor.vue";
 import { evalMiniPaintJson } from "../tplEval";
+import RenderTest from "./comps/RenderTest.vue";
 const props = defineProps<{
   filename: string;
   paint: MiniPaintApp;
@@ -18,6 +19,7 @@ const state = reactive({
   loaded: false,
   autoSave: true,
   showVarEditor: false,
+  showRenderTest: false,
 });
 
 const autoSave = useAutoSave(
@@ -42,6 +44,8 @@ loadAndOpen = wrapAsync(
 loadAndOpen();
 
 const clickVarToValue = async () => {
+  if (!window.confirm("这将去除所有模板变量，是否继续")) return;
+
   const s = props.paint.FileSave.export_as_json();
   const tpl = await evalMiniPaintJson(JSON.parse(s));
   console.log(JSON.parse(s), tpl);
@@ -59,6 +63,7 @@ const clickVarToValue = async () => {
     </div>
 
     <div class="status-bar">
+      <button @click="state.showRenderTest = true">渲染测试</button>
       <button @click="clickVarToValue">变量转值</button>
       <div class="auto-save">
         <input
@@ -108,6 +113,9 @@ const clickVarToValue = async () => {
       title="编辑模板变量"
     >
       <VarEditor :paint="props.paint" />
+    </Modal>
+    <Modal title="渲染测试" v-model:visible="state.showRenderTest">
+      <RenderTest :filename="props.filename" />
     </Modal>
   </div>
 </template>

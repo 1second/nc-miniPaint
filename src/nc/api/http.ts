@@ -1,8 +1,11 @@
 export class Http {
-  readonly base: string;
-  constructor(base: string) {
-    this.base = base;
-  }
+  constructor(
+    private base: string,
+    private handleError: (msg: string) => void = (msg) => {
+      alert(msg);
+      throw new Error(msg);
+    }
+  ) {}
 
   async get<T = any>(
     url: string,
@@ -62,7 +65,7 @@ export class Http {
     // }
     const data = await resp.json();
     if (data.code !== 0) {
-      throw new Error(data.message);
+      this.handleError(data.message);
     }
     return data.data;
   }
@@ -84,5 +87,3 @@ export function initAbortController() {
     },
   };
 }
-
-

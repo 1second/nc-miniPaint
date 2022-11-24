@@ -88,12 +88,11 @@ export async function evalMiniPaintJson(
       continue;
     }
     imageDownloads.push(
-      imageHttpDownload(k).then((data) => (varMap[k] = data))
+      imageHttpDownload(v).then((data) => (varMap[k] = data))
     );
   }
 
   await Promise.all(imageDownloads);
-  console.log(varMap, imageVars);
 
   // 3. eval expression
   const evalEnvVar = Object.fromEntries(
@@ -152,7 +151,6 @@ export async function evalMiniPaintJson(
             obj["data"] = varMap[varName];
           }
         } else {
-          console.log(k);
           obj[k] = varMap[varName];
         }
       } else {
