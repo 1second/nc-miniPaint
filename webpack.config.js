@@ -24,7 +24,7 @@ module.exports = {
 					'style-loader',
 					{
 						loader: 'css-loader',
-						options: {url: false}
+						options: { url: false }
 					}
 				]
 			},
@@ -33,13 +33,21 @@ module.exports = {
 				exclude: /(node_modules|bower_components)/,
 				use: ['babel-loader']
 			},
+			{
+				test: /\.(eot|svg|ttf|woff|woff2)$/,
+				loader: 'file-loader',
+				options: {
+					outputPath: 'fonts/',
+					name: '[name].[ext]'
+				}
+			},
 		]
 	},
 	plugins: [
 		new webpack.ProvidePlugin({
-            $: "jquery",
-            jQuery: "jquery",
-            "window.jQuery": "jquery"
+			$: "jquery",
+			jQuery: "jquery",
+			"window.jQuery": "jquery"
 		}),
 		new webpack.DefinePlugin({
 			VERSION: JSON.stringify(require("./package.json").version)

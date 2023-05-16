@@ -38,6 +38,7 @@
     "alertifyjs": "^1.13.1",
     "blueimp-canvas-to-blob": "^3.28.0",
     "exif-js": "^2.3.0",
+    "file-loader": "^6.2.0",
     "file-saver": "^2.0.5",
     "fuzzysort": "^1.1.4",
     "gif.js.optimized": "^1.0.1",
@@ -45,6 +46,7 @@
     "jquery": "^3.5.1",
     "pica": "^7.0.0",
     "semver-compare": "^1.0.0",
+    "url-loader": "^4.1.1",
     "uuid": "^8.3.2",
     "webfontloader": "^1.6.28"
   }

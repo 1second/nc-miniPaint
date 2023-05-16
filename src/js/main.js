@@ -10,7 +10,14 @@ import './../css/component.css';
 import './../css/layout.css';
 import './../css/menu.css';
 import './../css/print.css';
+import './../css/font.css';
 import './../../node_modules/alertifyjs/build/css/alertify.min.css';
+import './../fonts/ZCOOL.ttf'
+import './../fonts/ZCOOLKuaiLe.ttf'
+import './../fonts/LiuJianMaoCao.ttf'
+import './../fonts/LongCang.ttf'
+import './../fonts/MaShanZheng.ttf'
+import './../fonts/ZhiMangXing.ttf'
 //js
 import app from './app.js';
 import config from './config.js';
@@ -24,7 +31,23 @@ import File_open_class from './modules/file/open.js';
 import File_save_class from './modules/file/save.js';
 import * as Actions from './actions/index.js';
 
-window.addEventListener('load', function (e) {
+
+
+
+const loadFont = (fontName) => {
+	const myFont = new FontFace(fontName, `url(./dist/fonts/${fontName}.ttf)`)
+	return new Promise((resolve) => {
+		myFont.load().then(font => {
+			document.fonts.add(font)
+			resolve()
+		}).catch((err) => {
+			console.log(err)
+			resolve()
+		})
+	})
+}
+
+const initApp = () => {
 	// Initiate app
 	var Layers = new Base_layers_class();
 	var Base_tools = new Base_tools_class(true);
@@ -54,4 +77,17 @@ window.addEventListener('load', function (e) {
 	// Render all
 	GUI.init();
 	Layers.init();
-}, false);
+}
+
+window.addEventListener('load', function (e) {
+	Promise.all([
+		loadFont('ZCOOL'),
+		loadFont('ZCOOLKuaiLe'),
+		loadFont('LiuJianMaoCao'),
+		loadFont('LongCang'),
+		loadFont('MaShanZheng'),
+		loadFont('ZhiMangXing'),
+	]).then(() => {
+		initApp()
+	})
+}, false)
