@@ -1,0 +1,41 @@
+@font-face {
+  font-family: ZCOOL;
+  src: url('../fonts/ZCOOL.ttf');
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: ZCOOLKuaiLe;
+  src: url('../fonts/ZCOOLKuaiLe.ttf');
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: LiuJianMaoCao;
+  src: url('../fonts/LiuJianMaoCao.ttf');
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: LongCang;
+  src: url('../fonts/LongCang.ttf');
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: ZhiMangXing;
+  src: url('../fonts/ZhiMangXing.ttf');
+  font-style: normal;
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: MaShanZheng;
+  src: url('../fonts/MaShanZheng.ttf');
+  font-style: normal;
+  font-weight: normal;
+}

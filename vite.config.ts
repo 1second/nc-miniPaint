@@ -68,6 +68,11 @@ export default defineConfig({
     outDir: "render-dist",
     emptyOutDir: true,
     sourcemap: true,
+    rollupOptions: {
+      output:{
+        assetFileNames:'[name][extname]',
+      }
+    }
   },
   optimizeDeps: {
     include: [
